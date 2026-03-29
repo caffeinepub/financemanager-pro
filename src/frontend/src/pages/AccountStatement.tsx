@@ -64,6 +64,83 @@ export default function AccountStatement() {
     };
   });
 
+  const totalCredits = tableRows.reduce((s, r) => s + r.credit, 0);
+  const totalDebits = tableRows.reduce((s, r) => s + r.debit, 0);
+
+  const handlePrint = () => {
+    if (!statement) return;
+    const accountName = selectedAccount ? selectedAccount.name : "All Accounts";
+    const dateRange =
+      fromDate || toDate
+        ? `${fromDate || "Beginning"} to ${toDate || "Today"}`
+        : "All Dates";
+
+    const rowsHtml = tableRows
+      .map(
+        (r) => `
+      <tr>
+        <td>${r.date}</td>
+        <td>${r.description || "-"}</td>
+        <td style="text-align:right">${r.credit > 0 ? fmt(r.credit) : ""}</td>
+        <td style="text-align:right">${r.debit > 0 ? fmt(r.debit) : ""}</td>
+        <td style="text-align:right">${fmt(r.balance)}</td>
+      </tr>`,
+      )
+      .join("");
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Account Statement – ${accountName}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 13px; margin: 24px; color: #111; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    h2 { font-size: 15px; margin: 0 0 2px; font-weight: normal; }
+    .subtitle { font-size: 12px; color: #555; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th { background: #f0f0f0; border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    th.right, td.right { text-align: right; }
+    td { border: 1px solid #ddd; padding: 5px 8px; font-size: 12px; }
+    tr.opening td { background: #f5f5f5; font-weight: bold; }
+    tr:nth-child(even) td { background: #fafafa; }
+    @media print { body { margin: 12px; } }
+  </style>
+</head>
+<body>
+  <h1>FinanceManager Pro</h1>
+  <h2>Account Statement – ${accountName}</h2>
+  <div class="subtitle">Period: ${dateRange}</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th><th>Description</th>
+        <th class="right">Credit</th><th class="right">Debit</th><th class="right">Balance</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="opening">
+        <td colspan="4">Opening Balance</td>
+        <td style="text-align:right">${fmt(statement.openingBalance)}</td>
+      </tr>
+      ${rowsHtml}
+    </tbody>
+  </table>
+</body>
+</html>`;
+
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    if (!printWin) {
+      alert("Please allow popups for this site to print the statement.");
+      return;
+    }
+    printWin.document.write(html);
+    printWin.document.close();
+    printWin.focus();
+    printWin.print();
+    printWin.close();
+  };
+
   return (
     <div className="space-y-4">
       {/* Filter Panel */}
@@ -150,8 +227,8 @@ export default function AccountStatement() {
 
       {statement && (
         <>
-          {/* Summary KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Summary Cards — screen only */}
+          <div className="no-print grid grid-cols-4 gap-3">
             {[
               {
                 label: "Opening Balance",
@@ -160,33 +237,29 @@ export default function AccountStatement() {
               },
               {
                 label: "Total Credits",
-                value: statement.totalCredits,
+                value: totalCredits,
                 color: "text-green-700",
               },
               {
-                label: "Total Expenses",
-                value: statement.totalExpenses,
+                label: "Total Debits",
+                value: totalDebits,
                 color: "text-red-600",
               },
               {
                 label: "Closing Balance",
-                value: statement.closingBalance,
-                color:
-                  statement.closingBalance >= 0
-                    ? "text-green-700"
-                    : "text-red-600",
+                value: runningBalance,
+                color: runningBalance >= 0 ? "text-foreground" : "text-red-600",
               },
-            ].map(({ label, value, color }) => (
-              <div
-                key={label}
-                className="bg-card border border-border border-t-2 border-t-primary p-3"
-              >
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {label}
-                </p>
-                <p className={`mono text-lg font-bold mt-1 ${color}`}>
-                  {fmt(value)}
-                </p>
+            ].map((card) => (
+              <div key={card.label} className="bg-card border border-border">
+                <div className="tally-panel-header text-[11px]">
+                  {card.label}
+                </div>
+                <div className="p-3">
+                  <span className={`mono text-[15px] font-bold ${card.color}`}>
+                    {fmt(card.value)}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
@@ -200,7 +273,7 @@ export default function AccountStatement() {
               </span>
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="flex items-center gap-1 text-[11px] text-white/60 hover:text-white"
                 data-ocid="statement.button"
               >

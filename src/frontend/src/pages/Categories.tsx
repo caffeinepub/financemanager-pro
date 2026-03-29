@@ -20,6 +20,7 @@ import {
 } from "../components/ui/select";
 import { useActor } from "../hooks/useActor";
 import { uid } from "../lib/finance";
+import { getActorAsync } from "../utils/actorStore";
 
 const emptyForm = { name: "", categoryType: "Income" as CategoryType };
 
@@ -37,7 +38,10 @@ export default function Categories() {
   });
 
   const save = useMutation({
-    mutationFn: (c: Category) => actor!.saveCategory(c),
+    mutationFn: async (c: Category) => {
+      const backendActor = actor || (await getActorAsync());
+      return backendActor.saveCategory(c);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
       setOpen(false);
@@ -45,12 +49,15 @@ export default function Categories() {
   });
 
   const del = useMutation({
-    mutationFn: (id: string) => actor!.deleteCategory(id),
+    mutationFn: async (id: string) => {
+      const backendActor = actor || (await getActorAsync());
+      return backendActor.deleteCategory(id);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 
   const handleSubmit = () => {
-    if (!form.name.trim() || !actor) return;
+    if (!form.name.trim()) return;
     save.mutate({
       id: uid(),
       name: form.name.trim(),

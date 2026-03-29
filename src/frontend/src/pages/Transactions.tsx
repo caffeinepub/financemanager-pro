@@ -20,6 +20,7 @@ import {
 } from "../components/ui/select";
 import { useActor } from "../hooks/useActor";
 import { dateToNs, fmt, fmtDate, nowNs, uid } from "../lib/finance";
+import { getActorAsync } from "../utils/actorStore";
 
 type TxType = "Income" | "Expense";
 
@@ -60,7 +61,10 @@ export default function Transactions() {
   });
 
   const save = useMutation({
-    mutationFn: (t: Transaction) => actor!.saveTransaction(t),
+    mutationFn: async (t: Transaction) => {
+      const backendActor = actor || (await getActorAsync());
+      return backendActor.saveTransaction(t);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
@@ -69,7 +73,10 @@ export default function Transactions() {
   });
 
   const del = useMutation({
-    mutationFn: (id: string) => actor!.deleteTransaction(id),
+    mutationFn: async (id: string) => {
+      const backendActor = actor || (await getActorAsync());
+      return backendActor.deleteTransaction(id);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
@@ -98,7 +105,7 @@ export default function Transactions() {
   };
 
   const handleSubmit = () => {
-    if (!form.amount || !form.accountId || !actor) return;
+    if (!form.amount || !form.accountId) return;
     const tx: Transaction = {
       id: editId || uid(),
       date: form.date ? dateToNs(form.date) : nowNs(),
