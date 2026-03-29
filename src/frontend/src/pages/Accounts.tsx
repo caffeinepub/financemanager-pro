@@ -28,7 +28,7 @@ const emptyForm = {
 };
 
 export default function Accounts() {
-  const { actor } = useActor();
+  const { actor, isFetching: actorLoading } = useActor();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -82,7 +82,16 @@ export default function Accounts() {
   };
 
   const handleSubmit = () => {
-    if (!form.name.trim() || !actor) return;
+    if (!form.name.trim()) {
+      setDialogError("Account name is required.");
+      return;
+    }
+    if (!actor) {
+      setDialogError(
+        "Backend is still connecting. Please wait a moment and try again.",
+      );
+      return;
+    }
     setDialogError(null);
     const ob = Number.parseFloat(form.openingBalance) || 0;
     const acc: Account = {
@@ -96,12 +105,14 @@ export default function Accounts() {
   };
 
   const totalBalance = accounts.reduce((s, a) => s + a.currentBalance, 0);
-  const submitDisabled = save.isPending;
+  const submitDisabled = save.isPending || actorLoading;
   const submitLabel = save.isPending
     ? "Saving..."
-    : editId
-      ? "Update Account"
-      : "Add Account";
+    : actorLoading
+      ? "Connecting..."
+      : editId
+        ? "Update Account"
+        : "Add Account";
 
   return (
     <div className="space-y-4">
@@ -206,6 +217,11 @@ export default function Accounts() {
                 data-ocid="accounts.error_state"
               >
                 {dialogError}
+              </div>
+            )}
+            {actorLoading && (
+              <div className="text-[12px] text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2">
+                Connecting to backend, please wait...
               </div>
             )}
             <div>
