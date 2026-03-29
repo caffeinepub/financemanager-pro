@@ -79,12 +79,11 @@ export default function Receipts() {
 </head>
 <body>
   <div style="max-width:480px;margin:0 auto;font-family:'Courier New',monospace;background:white;color:black;padding:32px 28px">
-    <div style="text-align:center;margin-bottom:16px">
+    <div style="text-align:center;margin-bottom:20px">
       <div style="font-size:16px;font-weight:900;letter-spacing:2px;text-transform:uppercase">FinanceManager Pro</div>
       <div style="font-size:10px;color:#888;margin-top:2px">Income &amp; Expense Manager</div>
       <div style="border-bottom:2px dashed #333;margin-top:10px"></div>
     </div>
-    <div style="display:inline-block;background:#dcfce7;color:#166534;padding:3px 14px;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px">INCOME RECEIPT</div>
     ${receiptRows}
     <div style="text-align:center;margin-top:16px;border-top:1px dashed #ccc;padding-top:10px">
       <div style="font-size:10px;color:#aaa;letter-spacing:2px">* * * THANK YOU * * *</div>

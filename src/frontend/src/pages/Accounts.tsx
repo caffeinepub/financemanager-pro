@@ -82,13 +82,7 @@ export default function Accounts() {
   };
 
   const handleSubmit = () => {
-    if (!form.name.trim()) return;
-    if (!actor) {
-      setDialogError(
-        "Still connecting to backend. Please wait a moment and try again.",
-      );
-      return;
-    }
+    if (!form.name.trim() || !actor) return;
     setDialogError(null);
     const ob = Number.parseFloat(form.openingBalance) || 0;
     const acc: Account = {

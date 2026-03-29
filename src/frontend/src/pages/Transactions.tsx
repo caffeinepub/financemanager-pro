@@ -34,7 +34,7 @@ const emptyForm = {
 };
 
 export default function Transactions() {
-  const { actor, isFetching: actorLoading } = useActor();
+  const { actor } = useActor();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -128,15 +128,12 @@ export default function Transactions() {
       ? sorted
       : sorted.filter((t) => t.transactionType === filterType);
 
-  const submitDisabled = save.isPending || !actor || actorLoading;
-  const submitLabel =
-    actorLoading || !actor
-      ? "Connecting..."
-      : save.isPending
-        ? "Saving..."
-        : editId
-          ? "Update"
-          : "Add Transaction";
+  const submitDisabled = save.isPending;
+  const submitLabel = save.isPending
+    ? "Saving..."
+    : editId
+      ? "Update"
+      : "Add Transaction";
 
   return (
     <div className="space-y-4">

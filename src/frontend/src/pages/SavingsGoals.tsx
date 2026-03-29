@@ -32,7 +32,7 @@ const getStatus = (g: SavingsGoal): string => {
 };
 
 export default function SavingsGoals() {
-  const { actor, isFetching: actorLoading } = useActor();
+  const { actor } = useActor();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -97,15 +97,12 @@ export default function SavingsGoals() {
     Overdue: "bg-red-100 text-red-800",
   };
 
-  const submitDisabled = save.isPending || !actor || actorLoading;
-  const submitLabel =
-    actorLoading || !actor
-      ? "Connecting..."
-      : save.isPending
-        ? "Saving..."
-        : editId
-          ? "Update Goal"
-          : "Add Goal";
+  const submitDisabled = save.isPending;
+  const submitLabel = save.isPending
+    ? "Saving..."
+    : editId
+      ? "Update Goal"
+      : "Add Goal";
 
   return (
     <div className="space-y-4">

@@ -24,7 +24,7 @@ import { uid } from "../lib/finance";
 const emptyForm = { name: "", categoryType: "Income" as CategoryType };
 
 export default function Categories() {
-  const { actor, isFetching: actorLoading } = useActor();
+  const { actor } = useActor();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -62,13 +62,8 @@ export default function Categories() {
   const expense = categories.filter((c) => c.categoryType === "Expense");
   const list = activeTab === "income" ? income : expense;
 
-  const submitDisabled = save.isPending || !actor || actorLoading;
-  const submitLabel =
-    actorLoading || !actor
-      ? "Connecting..."
-      : save.isPending
-        ? "Saving..."
-        : "Add Category";
+  const submitDisabled = save.isPending;
+  const submitLabel = save.isPending ? "Saving..." : "Add Category";
 
   return (
     <div className="space-y-4">
