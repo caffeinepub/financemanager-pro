@@ -36,6 +36,95 @@ export default function Receipts() {
   const income = sorted.filter((t) => t.transactionType === "Income");
   const expense = sorted.filter((t) => t.transactionType === "Expense");
 
+  const buildReceiptHtml = (
+    t: Transaction,
+    receiptNo: number,
+    type: "Income" | "Expense",
+  ) => {
+    const isIncome = type === "Income";
+    const badgeBg = isIncome ? "#dcfce7" : "#fee2e2";
+    const badgeColor = isIncome ? "#166534" : "#991b1b";
+    const amountColor = isIncome ? "#166534" : "#991b1b";
+    const amountPrefix = isIncome ? "+" : "-";
+    const label = isIncome ? "INCOME RECEIPT" : "EXPENSE RECEIPT";
+    const title = isIncome ? "Income Receipt" : "Expense Receipt";
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${title} - FinanceManager Pro</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Courier New', monospace; background: white; color: black; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <div style="max-width:480px;margin:0 auto;font-family:'Courier New',monospace;background:white;color:black;padding:32px 28px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:900;letter-spacing:2px;text-transform:uppercase">FinanceManager Pro</div>
+      <div style="font-size:10px;color:#888;margin-top:2px">Income &amp; Expense Manager</div>
+      <div style="border-bottom:2px dashed #333;margin-top:10px"></div>
+    </div>
+    <div style="margin-bottom:32px">
+      <div style="display:inline-block;background:${badgeBg};color:${badgeColor};padding:3px 12px;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">${label}</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <tbody>
+          <tr><td style="color:#666;padding:4px 0;width:40%">RECEIPT NO</td><td style="text-align:right;font-weight:700">#${String(receiptNo).padStart(4, "0")}</td></tr>
+          <tr><td colspan="2"><div style="border-bottom:1px dotted #ccc"></div></td></tr>
+          <tr><td style="color:#666;padding:4px 0">DATE</td><td style="text-align:right;font-weight:700">${fmtDate(t.date)}</td></tr>
+          <tr><td colspan="2"><div style="border-bottom:1px dotted #ccc"></div></td></tr>
+          <tr><td style="color:#666;padding:4px 0">DESCRIPTION</td><td style="text-align:right">${t.description || "-"}</td></tr>
+          <tr><td colspan="2"><div style="border-bottom:1px dotted #ccc"></div></td></tr>
+          <tr><td style="color:#666;padding:4px 0">ACCOUNT</td><td style="text-align:right">${accountMap[t.accountId] || "-"}</td></tr>
+          <tr><td colspan="2"><div style="border-bottom:1px dotted #ccc"></div></td></tr>
+          <tr><td style="color:#666;padding:4px 0">CATEGORY</td><td style="text-align:right">${categoryMap[t.categoryId] || "-"}</td></tr>
+          ${t.receiptNote ? `<tr><td colspan="2"><div style="border-bottom:1px dotted #ccc"></div></td></tr><tr><td style="color:#666;padding:4px 0">NOTE</td><td style="text-align:right">${t.receiptNote}</td></tr>` : ""}
+          <tr><td colspan="2"><div style="border-top:2px dashed #333;margin-top:10px;padding-top:8px"></div></td></tr>
+          <tr>
+            <td style="color:#555;font-weight:700;letter-spacing:1px;font-size:12px">TOTAL</td>
+            <td style="text-align:right;font-size:18px;font-weight:900;color:${amountColor}">${amountPrefix}${fmt(t.amount)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="text-align:center;margin-top:16px;border-top:1px dashed #ccc;padding-top:10px">
+      <div style="font-size:10px;color:#aaa;letter-spacing:2px">* * * THANK YOU * * *</div>
+    </div>
+  </div>
+  <script>
+    window.onload = function() {
+      window.print();
+      setTimeout(function() { window.close(); }, 500);
+    };
+  <\/script>
+</body>
+</html>`;
+  };
+
+  const printSingle = (
+    t: Transaction,
+    receiptNo: number,
+    type: "Income" | "Expense",
+  ) => {
+    const html = buildReceiptHtml(t, receiptNo, type);
+    const printWindow = window.open(
+      "",
+      "_blank",
+      "width=650,height=900,scrollbars=yes",
+    );
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+    } else {
+      alert(
+        "Please allow popups for this site to print receipts, then try again.",
+      );
+    }
+  };
+
   const handlePrintAll = () => {
     const receiptRows = income
       .map(
@@ -169,7 +258,7 @@ export default function Receipts() {
                   data-ocid="receipts.primary_button"
                 >
                   <Printer size={12} />
-                  Print Income Receipts
+                  Print All
                 </button>
               )}
             </div>
@@ -301,6 +390,15 @@ export default function Receipts() {
                         +{fmt(t.amount)}
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => printSingle(t, i + 1, "Income")}
+                      data-ocid={`receipts.item.${i + 1}`}
+                      className="flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-widest font-bold rounded-none border border-green-700 text-green-400 hover:bg-green-950/40 transition-none"
+                    >
+                      <Printer size={10} />
+                      Print
+                    </button>
                   </div>
                 </div>
               ))}
@@ -453,6 +551,15 @@ export default function Receipts() {
                         -{fmt(t.amount)}
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => printSingle(t, i + 1, "Expense")}
+                      data-ocid={`receipts.item.${i + 1}`}
+                      className="flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-widest font-bold rounded-none border border-red-700 text-red-400 hover:bg-red-950/40 transition-none"
+                    >
+                      <Printer size={10} />
+                      Print
+                    </button>
                   </div>
                 </div>
               ))}
