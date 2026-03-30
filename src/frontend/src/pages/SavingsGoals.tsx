@@ -13,6 +13,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { useActor } from "../hooks/useActor";
 import { dateToNs, fmt, uid } from "../lib/finance";
+import { getActorAsync } from "../utils/actorStore";
 
 const emptyForm = {
   name: "",
@@ -37,6 +38,7 @@ export default function SavingsGoals() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
 
   const { data: goals = [] } = useQuery<SavingsGoal[]>({
     queryKey: ["goals"],
@@ -45,21 +47,36 @@ export default function SavingsGoals() {
   });
 
   const save = useMutation({
-    mutationFn: (g: SavingsGoal) => actor!.saveSavingsGoal(g),
+    mutationFn: async (g: SavingsGoal) => {
+      const backendActor = actor || (await getActorAsync());
+      return backendActor.saveSavingsGoal(g);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goals"] });
       setOpen(false);
     },
+    onError: (err: unknown) => {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Failed to save goal. Please try again.";
+      setDialogError(msg);
+    },
   });
 
   const del = useMutation({
-    mutationFn: (id: string) => actor!.deleteSavingsGoal(id),
+    mutationFn: async (id: string) => {
+      const backendActor = actor || (await getActorAsync());
+      return backendActor.deleteSavingsGoal(id);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
+    onError: () => alert("Failed to delete goal. Please try again."),
   });
 
   const openAdd = () => {
     setForm(emptyForm);
     setEditId(null);
+    setDialogError(null);
     setOpen(true);
   };
   const openEdit = (g: SavingsGoal) => {
@@ -74,11 +91,20 @@ export default function SavingsGoals() {
       description: g.description,
     });
     setEditId(g.id);
+    setDialogError(null);
     setOpen(true);
   };
 
   const handleSubmit = () => {
-    if (!form.name.trim() || !form.targetAmount || !actor) return;
+    if (!form.name.trim()) {
+      setDialogError("Goal name is required.");
+      return;
+    }
+    if (!form.targetAmount) {
+      setDialogError("Target amount is required.");
+      return;
+    }
+    setDialogError(null);
     const g: SavingsGoal = {
       id: editId || uid(),
       name: form.name.trim(),
@@ -237,6 +263,11 @@ export default function SavingsGoals() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3" data-ocid="goals.dialog">
+            {dialogError && (
+              <div className="bg-red-50 border border-red-300 text-red-700 text-[12px] px-3 py-2">
+                {dialogError}
+              </div>
+            )}
             <div>
               <Label className="text-[12px] uppercase tracking-wide">
                 Goal Name *
