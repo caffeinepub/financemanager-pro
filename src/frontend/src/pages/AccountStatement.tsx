@@ -104,7 +104,7 @@ export default function AccountStatement() {
     td { border: 1px solid #ddd; padding: 3px 5px; font-size: 9px; }
     tr.opening td { background: #f5f5f5; font-weight: bold; }
     tr:nth-child(even) td { background: #fafafa; }
-    @page { size: 105mm 148.5mm; margin: 5mm; }
+    @page { size: A4; margin: 10mm; }
     @media print { body { margin: 0; } }
   </style>
 </head>
