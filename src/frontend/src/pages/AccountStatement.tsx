@@ -94,17 +94,18 @@ export default function AccountStatement() {
   <meta charset="utf-8" />
   <title>Account Statement – ${accountName}</title>
   <style>
-    body { font-family: Arial, sans-serif; font-size: 13px; margin: 24px; color: #111; }
-    h1 { font-size: 20px; margin: 0 0 4px; }
-    h2 { font-size: 15px; margin: 0 0 2px; font-weight: normal; }
-    .subtitle { font-size: 12px; color: #555; margin-bottom: 16px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th { background: #f0f0f0; border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    body { font-family: Arial, sans-serif; font-size: 10px; margin: 5px; color: #111; }
+    h1 { font-size: 14px; margin: 0 0 3px; }
+    h2 { font-size: 11px; margin: 0 0 2px; font-weight: normal; }
+    .subtitle { font-size: 9px; color: #555; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    th { background: #f0f0f0; border: 1px solid #ccc; padding: 4px 5px; text-align: left; font-size: 9px; text-transform: uppercase; }
     th.right, td.right { text-align: right; }
-    td { border: 1px solid #ddd; padding: 5px 8px; font-size: 12px; }
+    td { border: 1px solid #ddd; padding: 3px 5px; font-size: 9px; }
     tr.opening td { background: #f5f5f5; font-weight: bold; }
     tr:nth-child(even) td { background: #fafafa; }
-    @media print { body { margin: 12px; } }
+    @page { size: 105mm 148.5mm; margin: 5mm; }
+    @media print { body { margin: 0; } }
   </style>
 </head>
 <body>

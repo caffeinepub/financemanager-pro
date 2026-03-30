@@ -57,11 +57,12 @@ export default function Receipts() {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Courier New', monospace; background: white; color: black; }
+    @page { size: 105mm 148.5mm; margin: 5mm; }
     @media print { body { margin: 0; } }
   </style>
 </head>
 <body>
-  <div style="max-width:480px;margin:0 auto;font-family:'Courier New',monospace;background:white;color:black;padding:32px 28px">
+  <div style="max-width:95mm;margin:0 auto;font-family:'Courier New',monospace;background:white;color:black;padding:32px 28px">
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-size:16px;font-weight:900;letter-spacing:2px;text-transform:uppercase">FinanceManager Pro</div>
       <div style="font-size:10px;color:#888;margin-top:2px">Income &amp; Expense Manager</div>
@@ -163,11 +164,12 @@ export default function Receipts() {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Courier New', monospace; background: white; color: black; }
+    @page { size: 105mm 148.5mm; margin: 5mm; }
     @media print { body { margin: 0; } }
   </style>
 </head>
 <body>
-  <div style="max-width:480px;margin:0 auto;font-family:'Courier New',monospace;background:white;color:black;padding:32px 28px">
+  <div style="max-width:95mm;margin:0 auto;font-family:'Courier New',monospace;background:white;color:black;padding:32px 28px">
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-size:16px;font-weight:900;letter-spacing:2px;text-transform:uppercase">FinanceManager Pro</div>
       <div style="font-size:10px;color:#888;margin-top:2px">Income &amp; Expense Manager</div>
