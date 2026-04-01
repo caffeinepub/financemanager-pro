@@ -4,99 +4,168 @@
 
 @layer base {
   :root {
-    --radius: 0.125rem;
+    /* Zero border-radius — Tally Prime has NO rounded corners */
+    --radius: 0rem;
 
-    /* Content area */
-    --background: 0.94 0.015 255;
-    --foreground: 0.18 0.02 255;
+    /* Content area — off-white background */
+    --background: 0.94 0.01 255;
+    --foreground: 0.12 0.025 255;
 
     /* Cards/panels = white */
     --card: 1 0 0;
-    --card-foreground: 0.18 0.02 255;
+    --card-foreground: 0.12 0.025 255;
 
     --popover: 1 0 0;
-    --popover-foreground: 0.18 0.02 255;
+    --popover-foreground: 0.12 0.025 255;
 
-    /* Primary = amber accent */
-    --primary: 0.74 0.18 68;
-    --primary-foreground: 0.15 0.02 255;
+    /* Primary = amber #f0a500 */
+    --primary: 0.74 0.17 72;
+    --primary-foreground: 0.12 0.02 255;
 
-    /* Secondary = light blue-gray */
-    --secondary: 0.9 0.02 255;
+    /* Secondary = light gray */
+    --secondary: 0.88 0.015 255;
     --secondary-foreground: 0.18 0.02 255;
 
-    --muted: 0.9 0.02 255;
+    --muted: 0.91 0.012 255;
     --muted-foreground: 0.45 0.02 255;
 
-    --accent: 0.74 0.18 68;
-    --accent-foreground: 0.15 0.02 255;
+    --accent: 0.74 0.17 72;
+    --accent-foreground: 0.12 0.02 255;
 
-    --destructive: 0.43 0.19 25;
+    --destructive: 0.41 0.19 25;
     --destructive-foreground: 1 0 0;
 
-    --border: 0.8 0.025 255;
-    --input: 0.87 0.02 255;
-    --ring: 0.74 0.18 68;
+    /* Border — visible, clean */
+    --border: 0.76 0.025 255;
+    --input: 0.85 0.018 255;
+    --ring: 0.74 0.17 72;
 
     /* Charts */
-    --chart-1: 0.47 0.13 145;
-    --chart-2: 0.43 0.19 25;
-    --chart-3: 0.74 0.18 68;
+    --chart-1: 0.48 0.14 145;
+    --chart-2: 0.41 0.19 25;
+    --chart-3: 0.74 0.17 72;
     --chart-4: 0.21 0.06 255;
-    --chart-5: 0.6 0.1 200;
+    --chart-5: 0.58 0.1 200;
 
-    /* Sidebar = deep navy */
-    --sidebar: 0.21 0.06 255;
+    /* Sidebar = deep navy #1a2340 */
+    --sidebar: 0.19 0.06 255;
     --sidebar-foreground: 0.95 0 0;
-    --sidebar-primary: 0.74 0.18 68;
-    --sidebar-primary-foreground: 0.15 0.02 255;
-    --sidebar-accent: 0.27 0.07 255;
-    --sidebar-accent-foreground: 0.95 0 0;
-    --sidebar-border: 0.27 0.07 255;
-    --sidebar-ring: 0.74 0.18 68;
+    --sidebar-primary: 0.74 0.17 72;
+    --sidebar-primary-foreground: 0.1 0.02 255;
+    --sidebar-accent: 0.25 0.07 255;
+    --sidebar-accent-foreground: 1 0 0;
+    --sidebar-border: 0.25 0.07 255;
+    --sidebar-ring: 0.74 0.17 72;
 
     /* Custom Tally tokens */
-    --tally-header: 0.17 0.05 255;
-    --tally-table-header: 0.87 0.025 255;
-    --tally-row-alt: 0.96 0.01 255;
-    --tally-income: 0.47 0.13 145;
-    --tally-expense: 0.43 0.19 25;
+    --tally-header: 0.15 0.05 255;
+    --tally-table-header: 0.87 0.018 255;
+    --tally-row-alt: 0.965 0.008 255;
+    --tally-income: 0.42 0.14 145;
+    --tally-expense: 0.42 0.18 25;
+  }
+
+  /* Enforce zero border-radius globally */
+  *,
+  *::before,
+  *::after {
+    border-radius: 0 !important;
   }
 
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: "Plus Jakarta Sans", system-ui, sans-serif;
     font-size: 13px;
+    line-height: 1.4;
   }
 
   /* Monospace for numbers/amounts */
   .mono {
     font-family: "JetBrains Mono", ui-monospace, monospace;
+    letter-spacing: -0.02em;
   }
 
-  /* Tally table style */
+  /* Tally table: borders on ALL sides, dense, compact */
+  .tally-table {
+    border-collapse: collapse;
+    width: 100%;
+  }
   .tally-table th {
-    @apply uppercase text-[11px] font-bold tracking-wider py-1.5 px-3 border-b border-border;
+    @apply uppercase text-[11px] font-bold tracking-wider py-1 px-2;
     background-color: oklch(var(--tally-table-header));
     color: oklch(var(--foreground));
+    border: 1px solid oklch(var(--border));
+    white-space: nowrap;
   }
   .tally-table td {
-    @apply py-1.5 px-3 border-b border-border text-[13px];
+    @apply py-1 px-2 text-[12px];
+    border: 1px solid oklch(var(--border));
   }
   .tally-table tr:nth-child(even) td {
     background-color: oklch(var(--tally-row-alt));
   }
   .tally-table tr:hover td {
-    background-color: oklch(0.91 0.02 255);
+    background-color: oklch(0.9 0.015 255);
   }
 
-  /* Tally panel header */
+  /* Tally panel header: dark navy, white text, uppercase */
   .tally-panel-header {
     background-color: oklch(var(--sidebar));
-    @apply text-white px-3 py-1.5 text-[12px] font-bold uppercase tracking-wide;
+    color: white;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid oklch(var(--sidebar-border));
+  }
+
+  /* Tally primary button: amber, uppercase, rectangular */
+  .tally-btn-primary {
+    background-color: oklch(var(--primary));
+    color: oklch(var(--primary-foreground));
+    border: 1px solid oklch(0.62 0.15 72);
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tally-btn-primary:hover {
+    background-color: oklch(0.68 0.17 72);
+  }
+
+  /* Tally secondary button: white bg, dark border */
+  .tally-btn-secondary {
+    background-color: white;
+    color: oklch(var(--foreground));
+    border: 1px solid oklch(var(--border));
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tally-btn-secondary:hover {
+    background-color: oklch(var(--muted));
+  }
+
+  /* Input fields: flat, rectangular, thin border */
+  input,
+  select,
+  textarea {
+    font-size: 12px !important;
   }
 }
 
