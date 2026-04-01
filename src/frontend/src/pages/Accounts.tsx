@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import type { Account, AccountType } from "../backend";
+import type { Account, AccountType, Transaction } from "../backend";
 import { Button } from "../components/ui/button";
 import {
   Dialog,
@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { useActor } from "../hooks/useActor";
-import { fmt, uid } from "../lib/finance";
+import { fmt, isIncomeType, uid } from "../lib/finance";
 import { getActorAsync } from "../utils/actorStore";
 
 const emptyForm = {
@@ -41,6 +41,27 @@ export default function Accounts() {
     queryFn: () => actor!.getAllAccounts(),
     enabled: !!actor,
   });
+
+  const { data: transactions = [] } = useQuery<Transaction[]>({
+    queryKey: ["transactions"],
+    queryFn: () => actor!.getAllTransactions(),
+    enabled: !!actor,
+  });
+
+  // Compute current balance per account from transactions
+  const computedBalance: Record<string, number> = {};
+  for (const a of accounts) {
+    computedBalance[a.id] = a.openingBalance;
+  }
+  for (const t of transactions) {
+    const accountId = t.accountId;
+    if (computedBalance[accountId] === undefined) continue;
+    if (isIncomeType(t.transactionType)) {
+      computedBalance[accountId] += t.amount;
+    } else {
+      computedBalance[accountId] -= t.amount;
+    }
+  }
 
   const save = useMutation({
     mutationFn: async (a: Account) => {
@@ -105,7 +126,10 @@ export default function Accounts() {
     save.mutate(acc);
   };
 
-  const totalBalance = accounts.reduce((s, a) => s + a.currentBalance, 0);
+  const totalBalance = accounts.reduce(
+    (s, a) => s + (computedBalance[a.id] ?? a.openingBalance),
+    0,
+  );
   const submitDisabled = save.isPending;
   const submitLabel = save.isPending
     ? "Saving..."
@@ -153,49 +177,52 @@ export default function Accounts() {
                 </tr>
               </thead>
               <tbody>
-                {accounts.map((a, idx) => (
-                  <tr key={a.id} data-ocid={`accounts.item.${idx + 1}`}>
-                    <td className="font-medium">{a.name}</td>
-                    <td>
-                      <span className="text-[11px] px-1.5 py-0.5 bg-secondary text-foreground font-semibold">
-                        {a.accountType}
-                      </span>
-                    </td>
-                    <td className="text-right mono">{fmt(a.openingBalance)}</td>
-                    <td
-                      className={`text-right mono font-bold ${
-                        a.currentBalance >= 0
-                          ? "text-green-700"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {fmt(a.currentBalance)}
-                    </td>
-                    <td className="text-center">
-                      <div className="flex gap-1 justify-center">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(a)}
-                          className="p-1 text-muted-foreground hover:text-primary"
-                          data-ocid={`accounts.edit_button.${idx + 1}`}
-                        >
-                          <Edit2 size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (confirm("Delete this account?"))
-                              del.mutate(a.id);
-                          }}
-                          className="p-1 text-muted-foreground hover:text-destructive"
-                          data-ocid={`accounts.delete_button.${idx + 1}`}
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {accounts.map((a, idx) => {
+                  const bal = computedBalance[a.id] ?? a.openingBalance;
+                  return (
+                    <tr key={a.id} data-ocid={`accounts.item.${idx + 1}`}>
+                      <td className="font-medium">{a.name}</td>
+                      <td>
+                        <span className="text-[11px] px-1.5 py-0.5 bg-secondary text-foreground font-semibold">
+                          {a.accountType}
+                        </span>
+                      </td>
+                      <td className="text-right mono">
+                        {fmt(a.openingBalance)}
+                      </td>
+                      <td
+                        className={`text-right mono font-bold ${
+                          bal >= 0 ? "text-green-700" : "text-red-600"
+                        }`}
+                      >
+                        {fmt(bal)}
+                      </td>
+                      <td className="text-center">
+                        <div className="flex gap-1 justify-center">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(a)}
+                            className="p-1 text-muted-foreground hover:text-primary"
+                            data-ocid={`accounts.edit_button.${idx + 1}`}
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm("Delete this account?"))
+                                del.mutate(a.id);
+                            }}
+                            className="p-1 text-muted-foreground hover:text-destructive"
+                            data-ocid={`accounts.delete_button.${idx + 1}`}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

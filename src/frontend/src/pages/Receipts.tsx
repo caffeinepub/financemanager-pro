@@ -3,7 +3,7 @@ import { Printer, TrendingDown, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import type { Account, Category, Transaction } from "../backend";
 import { useActor } from "../hooks/useActor";
-import { fmt, fmtDate } from "../lib/finance";
+import { fmt, fmtDate, isExpenseType, isIncomeType } from "../lib/finance";
 
 export default function Receipts() {
   const { actor } = useActor();
@@ -33,8 +33,8 @@ export default function Receipts() {
   const sorted = [...transactions].sort(
     (a, b) => Number(b.date) - Number(a.date),
   );
-  const income = sorted.filter((t) => t.transactionType === "Income");
-  const expense = sorted.filter((t) => t.transactionType === "Expense");
+  const income = sorted.filter((t) => isIncomeType(t.transactionType));
+  const expense = sorted.filter((t) => isExpenseType(t.transactionType));
 
   const buildReceiptHtml = (
     t: Transaction,

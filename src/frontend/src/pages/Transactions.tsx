@@ -19,7 +19,15 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { useActor } from "../hooks/useActor";
-import { dateToNs, fmt, fmtDate, nowNs, uid } from "../lib/finance";
+import {
+  dateToNs,
+  fmt,
+  fmtDate,
+  isIncomeType,
+  nowNs,
+  txTypeLabel,
+  uid,
+} from "../lib/finance";
 import { getActorAsync } from "../utils/actorStore";
 
 type TxType = "Income" | "Expense";
@@ -93,7 +101,7 @@ export default function Transactions() {
     const ms = Number(t.date) / 1_000_000;
     setForm({
       date: new Date(ms).toISOString().split("T")[0],
-      transactionType: t.transactionType as TxType,
+      transactionType: txTypeLabel(t.transactionType) as TxType,
       accountId: t.accountId,
       categoryId: t.categoryId,
       description: t.description,
@@ -124,8 +132,10 @@ export default function Transactions() {
   const categoryMap: Record<string, string> = {};
   for (const c of categories) categoryMap[c.id] = c.name;
 
-  const filteredCats = categories.filter(
-    (c) => c.categoryType === form.transactionType,
+  const filteredCats = categories.filter((c) =>
+    form.transactionType === "Income"
+      ? isIncomeType(c.categoryType)
+      : !isIncomeType(c.categoryType),
   );
   const sorted = [...transactions].sort(
     (a, b) => Number(b.date) - Number(a.date),
@@ -133,7 +143,11 @@ export default function Transactions() {
   const filtered =
     filterType === "all"
       ? sorted
-      : sorted.filter((t) => t.transactionType === filterType);
+      : sorted.filter((t) =>
+          filterType === "Income"
+            ? isIncomeType(t.transactionType)
+            : !isIncomeType(t.transactionType),
+        );
 
   const submitDisabled = save.isPending;
   const submitLabel = save.isPending
@@ -220,22 +234,22 @@ export default function Transactions() {
                     <td>
                       <span
                         className={`text-[11px] font-bold px-1.5 py-0.5 ${
-                          t.transactionType === "Income"
+                          isIncomeType(t.transactionType)
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {t.transactionType}
+                        {txTypeLabel(t.transactionType)}
                       </span>
                     </td>
                     <td
                       className={`text-right mono font-semibold ${
-                        t.transactionType === "Income"
+                        isIncomeType(t.transactionType)
                           ? "text-green-700"
                           : "text-red-600"
                       }`}
                     >
-                      {t.transactionType === "Income" ? "+" : "-"}
+                      {isIncomeType(t.transactionType) ? "+" : "-"}
                       {fmt(t.amount)}
                     </td>
                     <td>

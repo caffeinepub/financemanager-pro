@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import type { Category, Transaction } from "../backend";
 import { useActor } from "../hooks/useActor";
-import { fmt } from "../lib/finance";
+import { fmt, isExpenseType, isIncomeType } from "../lib/finance";
 
 const COLORS = [
   "#2563EB",
@@ -68,7 +68,7 @@ export default function Reports() {
       const ms = Number(t.date) / 1_000_000;
       const key = new Date(ms).toISOString().split("T")[0];
       if (days[key]) {
-        if (t.transactionType === "Income") days[key].Income += t.amount;
+        if (isIncomeType(t.transactionType)) days[key].Income += t.amount;
         else days[key].Expense += t.amount;
       }
     }
@@ -98,7 +98,7 @@ export default function Reports() {
       const d = new Date(ms);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       if (months[key]) {
-        if (t.transactionType === "Income") months[key].Income += t.amount;
+        if (isIncomeType(t.transactionType)) months[key].Income += t.amount;
         else months[key].Expense += t.amount;
       }
     }
@@ -114,7 +114,7 @@ export default function Reports() {
       const ms = Number(t.date) / 1_000_000;
       const y = String(new Date(ms).getFullYear());
       if (!years[y]) years[y] = { year: y, Income: 0, Expense: 0 };
-      if (t.transactionType === "Income") years[y].Income += t.amount;
+      if (isIncomeType(t.transactionType)) years[y].Income += t.amount;
       else years[y].Expense += t.amount;
     }
     return Object.values(years).sort((a, b) => Number(a.year) - Number(b.year));
@@ -122,8 +122,8 @@ export default function Reports() {
 
   const catBreakdown = (() => {
     const cats: Record<string, number> = {};
-    for (const t of transactions.filter(
-      (t) => t.transactionType === "Expense",
+    for (const t of transactions.filter((t) =>
+      isExpenseType(t.transactionType),
     )) {
       const name = categoryMap[t.categoryId] || "Uncategorized";
       cats[name] = (cats[name] || 0) + t.amount;

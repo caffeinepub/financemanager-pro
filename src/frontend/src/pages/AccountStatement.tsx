@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { useActor } from "../hooks/useActor";
-import { dateToNs, fmt, fmtDate } from "../lib/finance";
+import { dateToNs, fmt, fmtDate, isIncomeType } from "../lib/finance";
 
 export default function AccountStatement() {
   const { actor } = useActor();
@@ -52,7 +52,7 @@ export default function AccountStatement() {
 
   let runningBalance = statement?.openingBalance ?? 0;
   const tableRows = rows.map((t) => {
-    const isIncome = t.transactionType === "Income";
+    const isIncome = isIncomeType(t.transactionType);
     if (isIncome) runningBalance += t.amount;
     else runningBalance -= t.amount;
     return {

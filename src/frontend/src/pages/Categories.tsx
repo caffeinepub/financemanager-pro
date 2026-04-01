@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { Category, CategoryType } from "../backend";
 import { Button } from "../components/ui/button";
@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { useActor } from "../hooks/useActor";
-import { uid } from "../lib/finance";
+import { isExpenseType, isIncomeType, txTypeLabel } from "../lib/finance";
 import { getActorAsync } from "../utils/actorStore";
 
 const emptyForm = { name: "", categoryType: "Income" as CategoryType };
@@ -29,6 +29,7 @@ export default function Categories() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [editId, setEditId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"income" | "expense">("income");
 
   const { data: categories = [] } = useQuery<Category[]>({
@@ -45,6 +46,7 @@ export default function Categories() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
       setOpen(false);
+      setEditId(null);
     },
   });
 
@@ -59,27 +61,40 @@ export default function Categories() {
   const handleSubmit = () => {
     if (!form.name.trim()) return;
     save.mutate({
-      id: uid(),
+      id: editId ?? crypto.randomUUID(),
       name: form.name.trim(),
       categoryType: form.categoryType,
     });
   };
 
-  const income = categories.filter((c) => c.categoryType === "Income");
-  const expense = categories.filter((c) => c.categoryType === "Expense");
+  const openAdd = () => {
+    setForm(emptyForm);
+    setEditId(null);
+    setOpen(true);
+  };
+
+  const openEdit = (c: Category) => {
+    setForm({ name: c.name, categoryType: c.categoryType });
+    setEditId(c.id);
+    setOpen(true);
+  };
+
+  const income = categories.filter((c) => isIncomeType(c.categoryType));
+  const expense = categories.filter((c) => isExpenseType(c.categoryType));
   const list = activeTab === "income" ? income : expense;
 
   const submitDisabled = save.isPending;
-  const submitLabel = save.isPending ? "Saving..." : "Add Category";
+  const submitLabel = save.isPending
+    ? "Saving..."
+    : editId
+      ? "Save Changes"
+      : "Add Category";
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button
-          onClick={() => {
-            setForm(emptyForm);
-            setOpen(true);
-          }}
+          onClick={openAdd}
           className="bg-primary text-primary-foreground hover:opacity-90 rounded-none text-[12px] uppercase tracking-wide h-7 px-3"
           data-ocid="categories.open_modal_button"
         >
@@ -142,25 +157,37 @@ export default function Categories() {
                     <td>
                       <span
                         className={`text-[11px] font-bold px-1.5 py-0.5 ${
-                          c.categoryType === "Income"
+                          isIncomeType(c.categoryType)
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {c.categoryType}
+                        {txTypeLabel(c.categoryType)}
                       </span>
                     </td>
                     <td className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm("Delete category?")) del.mutate(c.id);
-                        }}
-                        className="p-1 text-muted-foreground hover:text-destructive mx-auto"
-                        data-ocid={`categories.delete_button.${idx + 1}`}
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(c)}
+                          className="p-1 text-muted-foreground hover:text-primary"
+                          title="Edit"
+                          data-ocid={`categories.edit_button.${idx + 1}`}
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm("Delete category?")) del.mutate(c.id);
+                          }}
+                          className="p-1 text-muted-foreground hover:text-destructive"
+                          title="Delete"
+                          data-ocid={`categories.delete_button.${idx + 1}`}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -170,11 +197,17 @@ export default function Categories() {
         )}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) setEditId(null);
+        }}
+      >
         <DialogContent className="max-w-sm rounded-none">
           <DialogHeader>
             <DialogTitle className="text-[13px] uppercase tracking-wide">
-              Add Category
+              {editId ? "Edit Category" : "Add Category"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4" data-ocid="categories.dialog">

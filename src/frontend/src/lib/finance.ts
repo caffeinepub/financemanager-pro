@@ -50,3 +50,17 @@ export type {
   AccountType,
   CategoryType,
 };
+
+// ICP variants come as { Income: null } or { Expense: null } objects, not strings
+export const isIncomeType = (t: unknown): boolean =>
+  typeof t === "string"
+    ? t === "Income"
+    : t !== null && typeof t === "object" && "Income" in (t as object);
+
+export const isExpenseType = (t: unknown): boolean =>
+  typeof t === "string"
+    ? t === "Expense"
+    : t !== null && typeof t === "object" && "Expense" in (t as object);
+
+export const txTypeLabel = (t: unknown): string =>
+  isIncomeType(t) ? "Income" : "Expense";

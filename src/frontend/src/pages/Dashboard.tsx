@@ -20,7 +20,13 @@ import type { Page } from "../App";
 import type { Account, Transaction } from "../backend";
 import { Button } from "../components/ui/button";
 import { useActor } from "../hooks/useActor";
-import { fmt, fmtDate } from "../lib/finance";
+import {
+  fmt,
+  fmtDate,
+  isExpenseType,
+  isIncomeType,
+  txTypeLabel,
+} from "../lib/finance";
 
 interface Props {
   setPage: (p: Page) => void;
@@ -42,10 +48,10 @@ export default function Dashboard({ setPage }: Props) {
   });
 
   const totalIncome = transactions
-    .filter((t) => t.transactionType === "Income")
+    .filter((t) => isIncomeType(t.transactionType))
     .reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions
-    .filter((t) => t.transactionType === "Expense")
+    .filter((t) => isExpenseType(t.transactionType))
     .reduce((s, t) => s + t.amount, 0);
   const netBalance = totalIncome - totalExpense;
   const savingsRate =
@@ -74,7 +80,7 @@ export default function Dashboard({ setPage }: Props) {
       const d = new Date(ms);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       if (months[key]) {
-        if (t.transactionType === "Income") months[key].Income += t.amount;
+        if (isIncomeType(t.transactionType)) months[key].Income += t.amount;
         else months[key].Expense += t.amount;
       }
     }
@@ -270,22 +276,22 @@ export default function Dashboard({ setPage }: Props) {
                     <td>
                       <span
                         className={`text-[11px] font-bold px-1.5 py-0.5 ${
-                          t.transactionType === "Income"
+                          isIncomeType(t.transactionType)
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {t.transactionType}
+                        {txTypeLabel(t.transactionType)}
                       </span>
                     </td>
                     <td
                       className={`text-right mono font-semibold ${
-                        t.transactionType === "Income"
+                        isIncomeType(t.transactionType)
                           ? "text-green-700"
                           : "text-red-600"
                       }`}
                     >
-                      {t.transactionType === "Income" ? "+" : "-"}
+                      {isIncomeType(t.transactionType) ? "+" : "-"}
                       {fmt(t.amount)}
                     </td>
                   </tr>
