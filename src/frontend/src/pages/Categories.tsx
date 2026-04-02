@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useRef, useState } from "react";
 import type { Category, CategoryType } from "../backend";
 import { Button } from "../components/ui/button";
 import {
@@ -32,6 +32,11 @@ export default function Categories() {
   const [editId, setEditId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"income" | "expense">("income");
 
+  // Inline edit state
+  const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+  const [inlineName, setInlineName] = useState("");
+  const inlineInputRef = useRef<HTMLInputElement>(null);
+
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: () => actor!.getAllCategories(),
@@ -47,6 +52,18 @@ export default function Categories() {
       qc.invalidateQueries({ queryKey: ["categories"] });
       setOpen(false);
       setEditId(null);
+    },
+  });
+
+  const inlineSave = useMutation({
+    mutationFn: async (c: Category) => {
+      const backendActor = actor || (await getActorAsync());
+      return backendActor.saveCategory(c);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      setInlineEditId(null);
+      setInlineName("");
     },
   });
 
@@ -77,6 +94,30 @@ export default function Categories() {
     setForm({ name: c.name, categoryType: c.categoryType });
     setEditId(c.id);
     setOpen(true);
+  };
+
+  const startInlineEdit = (c: Category) => {
+    setInlineEditId(c.id);
+    setInlineName(c.name);
+    setTimeout(() => inlineInputRef.current?.focus(), 0);
+  };
+
+  const commitInlineEdit = (c: Category) => {
+    const trimmed = inlineName.trim();
+    if (!trimmed || trimmed === c.name) {
+      cancelInlineEdit();
+      return;
+    }
+    inlineSave.mutate({
+      id: c.id,
+      name: trimmed,
+      categoryType: c.categoryType,
+    });
+  };
+
+  const cancelInlineEdit = () => {
+    setInlineEditId(null);
+    setInlineName("");
   };
 
   const income = categories.filter((c) => isIncomeType(c.categoryType));
@@ -151,46 +192,98 @@ export default function Categories() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((c, idx) => (
-                  <tr key={c.id} data-ocid={`categories.item.${idx + 1}`}>
-                    <td className="font-medium">{c.name}</td>
-                    <td>
-                      <span
-                        className={`text-[11px] font-bold px-1.5 py-0.5 ${
-                          isIncomeType(c.categoryType)
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {txTypeLabel(c.categoryType)}
-                      </span>
-                    </td>
-                    <td className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(c)}
-                          className="p-1 text-muted-foreground hover:text-primary"
-                          title="Edit"
-                          data-ocid={`categories.edit_button.${idx + 1}`}
+                {list.map((c, idx) => {
+                  const isInlineEditing = inlineEditId === c.id;
+                  return (
+                    <tr key={c.id} data-ocid={`categories.item.${idx + 1}`}>
+                      <td className="font-medium">
+                        {isInlineEditing ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              ref={inlineInputRef}
+                              type="text"
+                              value={inlineName}
+                              onChange={(e) => setInlineName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") commitInlineEdit(c);
+                                if (e.key === "Escape") cancelInlineEdit();
+                              }}
+                              className="rounded-none h-7 text-[13px] border border-primary px-1 bg-background text-foreground outline-none focus:ring-0 w-full min-w-0"
+                              data-ocid={`categories.input.${idx + 1}`}
+                              disabled={inlineSave.isPending}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => commitInlineEdit(c)}
+                              className="p-0.5 text-green-600 hover:text-green-700 disabled:opacity-50"
+                              title="Save"
+                              disabled={inlineSave.isPending}
+                              data-ocid={`categories.save_button.${idx + 1}`}
+                            >
+                              <Check size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelInlineEdit}
+                              className="p-0.5 text-muted-foreground hover:text-destructive"
+                              title="Cancel"
+                              data-ocid={`categories.cancel_button.${idx + 1}`}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="cursor-pointer hover:text-primary bg-transparent border-none p-0 text-left font-medium text-[13px] w-full"
+                            title="Click to edit name"
+                            onClick={() => startInlineEdit(c)}
+                          >
+                            {c.name}
+                          </button>
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          className={`text-[11px] font-bold px-1.5 py-0.5 ${
+                            isIncomeType(c.categoryType)
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
                         >
-                          <Pencil size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (confirm("Delete category?")) del.mutate(c.id);
-                          }}
-                          className="p-1 text-muted-foreground hover:text-destructive"
-                          title="Delete"
-                          data-ocid={`categories.delete_button.${idx + 1}`}
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {txTypeLabel(c.categoryType)}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        {!isInlineEditing && (
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEdit(c)}
+                              className="p-1 text-muted-foreground hover:text-primary"
+                              title="Edit (full)"
+                              data-ocid={`categories.edit_button.${idx + 1}`}
+                            >
+                              <Pencil size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm("Delete category?"))
+                                  del.mutate(c.id);
+                              }}
+                              className="p-1 text-muted-foreground hover:text-destructive"
+                              title="Delete"
+                              data-ocid={`categories.delete_button.${idx + 1}`}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
