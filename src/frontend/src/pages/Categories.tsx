@@ -22,7 +22,7 @@ import { useActor } from "../hooks/useActor";
 import { isExpenseType, isIncomeType, txTypeLabel } from "../lib/finance";
 import { getActorAsync } from "../utils/actorStore";
 
-const emptyForm = { name: "", categoryType: "Income" as CategoryType };
+const emptyForm = { name: "", categoryType: "Income" };
 
 export default function Categories() {
   const { actor } = useActor();
@@ -75,12 +75,18 @@ export default function Categories() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 
+  // Convert string UI value to ICP variant object
+  const toVariant = (s: string): CategoryType =>
+    (s === "Income"
+      ? { Income: null }
+      : { Expense: null }) as unknown as CategoryType;
+
   const handleSubmit = () => {
     if (!form.name.trim()) return;
     save.mutate({
       id: editId ?? crypto.randomUUID(),
       name: form.name.trim(),
-      categoryType: form.categoryType,
+      categoryType: toVariant(form.categoryType),
     });
   };
 
@@ -91,7 +97,11 @@ export default function Categories() {
   };
 
   const openEdit = (c: Category) => {
-    setForm({ name: c.name, categoryType: c.categoryType });
+    setForm({
+      name: c.name,
+      // Normalize ICP variant object { Income: null } to plain string
+      categoryType: isIncomeType(c.categoryType) ? "Income" : "Expense",
+    });
     setEditId(c.id);
     setOpen(true);
   };
@@ -111,7 +121,10 @@ export default function Categories() {
     inlineSave.mutate({
       id: c.id,
       name: trimmed,
-      categoryType: c.categoryType,
+      // Preserve the original variant type when doing an inline name edit
+      categoryType: isIncomeType(c.categoryType)
+        ? ({ Income: null } as unknown as CategoryType)
+        : ({ Expense: null } as unknown as CategoryType),
     });
   };
 
@@ -311,7 +324,7 @@ export default function Categories() {
               <Select
                 value={form.categoryType}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, categoryType: v as CategoryType }))
+                  setForm((f) => ({ ...f, categoryType: v }))
                 }
               >
                 <SelectTrigger
