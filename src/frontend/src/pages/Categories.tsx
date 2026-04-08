@@ -21,6 +21,7 @@ import {
 import { useActor } from "../hooks/useActor";
 import { isExpenseType, isIncomeType, txTypeLabel } from "../lib/finance";
 import { getActorAsync } from "../utils/actorStore";
+import { retryBackendCall } from "../utils/retryBackend";
 
 const emptyForm = { name: "", categoryType: "Income" };
 
@@ -31,6 +32,7 @@ export default function Categories() {
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"income" | "expense">("income");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Inline edit state
   const [inlineEditId, setInlineEditId] = useState<string | null>(null);
@@ -45,20 +47,38 @@ export default function Categories() {
 
   const save = useMutation({
     mutationFn: async (c: Category) => {
-      const backendActor = actor || (await getActorAsync());
-      return backendActor.saveCategory(c);
+      return retryBackendCall(async () => {
+        const backendActor = await getActorAsync();
+        return backendActor.saveCategory(c);
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
       setOpen(false);
       setEditId(null);
     },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("is stopped") || msg.includes("IC0508")) {
+        setSaveError(
+          "The backend is currently offline. Please try again in a moment.",
+        );
+      } else if (msg.includes("connecting")) {
+        setSaveError(
+          "Backend is still connecting. Please wait a moment and try again.",
+        );
+      } else {
+        setSaveError("Failed to save category. Please try again.");
+      }
+    },
   });
 
   const inlineSave = useMutation({
     mutationFn: async (c: Category) => {
-      const backendActor = actor || (await getActorAsync());
-      return backendActor.saveCategory(c);
+      return retryBackendCall(async () => {
+        const backendActor = await getActorAsync();
+        return backendActor.saveCategory(c);
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
@@ -69,8 +89,10 @@ export default function Categories() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const backendActor = actor || (await getActorAsync());
-      return backendActor.deleteCategory(id);
+      return retryBackendCall(async () => {
+        const backendActor = await getActorAsync();
+        return backendActor.deleteCategory(id);
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
@@ -83,6 +105,7 @@ export default function Categories() {
 
   const handleSubmit = () => {
     if (!form.name.trim()) return;
+    setSaveError(null);
     save.mutate({
       id: editId ?? crypto.randomUUID(),
       name: form.name.trim(),
@@ -93,6 +116,7 @@ export default function Categories() {
   const openAdd = () => {
     setForm(emptyForm);
     setEditId(null);
+    setSaveError(null);
     setOpen(true);
   };
 
@@ -103,6 +127,7 @@ export default function Categories() {
       categoryType: isIncomeType(c.categoryType) ? "Income" : "Expense",
     });
     setEditId(c.id);
+    setSaveError(null);
     setOpen(true);
   };
 
@@ -307,7 +332,10 @@ export default function Categories() {
         open={open}
         onOpenChange={(v) => {
           setOpen(v);
-          if (!v) setEditId(null);
+          if (!v) {
+            setEditId(null);
+            setSaveError(null);
+          }
         }}
       >
         <DialogContent className="max-w-sm rounded-none">
@@ -317,6 +345,19 @@ export default function Categories() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4" data-ocid="categories.dialog">
+            {saveError && (
+              <div
+                className="bg-red-50 border border-red-300 text-red-700 text-[12px] px-3 py-2"
+                data-ocid="categories.error_state"
+              >
+                {saveError}
+              </div>
+            )}
+            {save.isPending && (
+              <div className="bg-amber-50 border border-amber-300 text-amber-800 text-[12px] px-3 py-2">
+                Saving... (retrying if backend is starting up)
+              </div>
+            )}
             <div>
               <Label className="text-[12px] uppercase tracking-wide">
                 Category Type *
@@ -348,6 +389,9 @@ export default function Categories() {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, name: e.target.value }))
                 }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSubmit();
+                }}
                 placeholder="e.g. Salary, Rent, Food"
                 className="rounded-none h-8 text-[13px]"
                 data-ocid="categories.input"
